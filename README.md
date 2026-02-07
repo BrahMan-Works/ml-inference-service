@@ -32,4 +32,4 @@ Metadata, request logs, and experiment results are stored in a PostgreSQL databa
 - **Week 5–6:** ML model training and Python-based inference baseline
 - **Week 7–8:** C++-based inference module and Python integration
 - **Week 9–10:** Performance benchmarking and profiling
-- **Week 11–12:** Documentation, cleanup, and interview-ready polish
+- **Week 11–12:** Documentation, cleanup and polish.
