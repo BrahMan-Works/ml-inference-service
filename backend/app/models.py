@@ -5,4 +5,7 @@ class PredictRequest(BaseModel):
     y: float
 
 class PredictResponse(BaseModel):
+    id : int
+    x : float
+    y : float
     result: float
