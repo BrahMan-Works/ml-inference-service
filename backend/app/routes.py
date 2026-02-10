@@ -1,65 +1,46 @@
+import uuid
+import logging
+
 from fastapi import APIRouter, HTTPException
-from .models import PredictRequest, PredictResponse
-from .db import get_connection
+from app.models import PredictRequest, PredictResponse
+from app.repository import insert_inference, get_inference_by_id
 
 router = APIRouter()
 
 @router.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
+    request_id = str(uuid.uuid4())
+    logging.info(f"[{request_id}] Incoming /predict request: x={req.x}, y={req.y}")
+
     result = req.x + req.y
 
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        inference_id = insert_inference(req.x, req.y, result)
+        logging.info(f"[{request_id}] DB insert successful, id={inference_id}")
+    except Exception as e:
+        logging.error(f"[{request_id}] DB insert failed: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
 
-    cur.execute(
-        """
-        INSERT INTO inference_requests (x, y, result)
-        VALUES (%s, %s, %s)
-        RETURNING id;
-        """,
-        (req.x, req.y, result)
-    )
-
-    inserted_id = cur.fetchone()[0]
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return PredictResponse(
-        id=inserted_id,
-        x=req.x,
-        y=req.y,
-        result=result
-    )
+    return PredictResponse(id=inference_id, x=req.x, y=req.y, result=result)
 
 
-@router.get("/predict/{request_id}", response_model=PredictResponse)
-def get_prediction(request_id: int):
-    conn = get_connection()
-    cur = conn.cursor()
+@router.get("/predict/{inference_id}")
+def get_prediction(inference_id: int):
+    request_id = str(uuid.uuid4())
+    logging.info(f"[{request_id}] Fetching inference id={inference_id}")
 
-    cur.execute(
-        """
-        SELECT id, x, y, result
-        FROM inference_requests
-        WHERE id = %s;
-        """,
-        (request_id,)
-    )
-
-    row = cur.fetchone()
-
-    cur.close()
-    conn.close()
+    row = get_inference_by_id(inference_id)
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Prediction Not Found")
+        logging.warning(f"[{request_id}] Inference id={inference_id} not found")
+        raise HTTPException(status_code=404, detail="Inference not found")
 
-    return PredictResponse(
-        id=row[0],
-        x=row[1],
-        y=row[2],
-        result=row[3]
-    )
+    logging.info(f"[{request_id}] Inference id={inference_id} found")
+
+    return {
+        "id": row[0],
+        "x": row[1],
+        "y": row[2],
+        "result": row[3],
+    }
 
