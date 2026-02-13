@@ -1,5 +1,7 @@
 import uuid
 import logging
+import numpy as np
+import app.model_loader as model_loader
 
 from fastapi import APIRouter, HTTPException
 from app.models import PredictRequest, PredictResponse
@@ -12,7 +14,11 @@ def predict(req: PredictRequest):
     request_id = str(uuid.uuid4())
     logging.info(f"[{request_id}] Incoming /predict request: x={req.x}, y={req.y}")
 
-    result = req.x + req.y
+    if model_loader.model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+
+    input_data = np.array([[req.x, req.y]])
+    result = float(model_loader.model.predict(input_data)[0])
 
     try:
         inference_id = insert_inference(req.x, req.y, result)
