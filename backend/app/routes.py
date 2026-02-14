@@ -17,8 +17,8 @@ def predict(req: PredictRequest):
     if model_loader.model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
-    input_data = np.array([[req.x, req.y]])
-    result = float(model_loader.model.predict(input_data)[0])
+    features = np.random.rand(1, 50)
+    result = float(model_loader.model.predict(features)[0])
 
     try:
         inference_id = insert_inference(req.x, req.y, result)
