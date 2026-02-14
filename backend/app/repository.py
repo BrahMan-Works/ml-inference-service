@@ -1,4 +1,4 @@
-from app.db import get_connection
+from app.db import get_connection, release_connection
 
 def insert_inference(x: float, y: float, result: float) -> int:
     conn = None
@@ -31,7 +31,7 @@ def insert_inference(x: float, y: float, result: float) -> int:
         if cur:
             cur.close()
         if conn:
-            conn.close()
+            release_connection(conn)
 
 
 def get_inference_by_id(inference_id: int):
@@ -58,5 +58,5 @@ def get_inference_by_id(inference_id: int):
         if cur:
             cur.close()
         if conn:
-            conn.close()
+            release_connection(conn)
 
