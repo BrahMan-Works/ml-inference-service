@@ -5,6 +5,7 @@ import app.model_loader as model_loader
 
 from fastapi import APIRouter, HTTPException
 from app.models import PredictRequest, PredictResponse
+from app.compute import python_compute, cpp_compute
 # from app.repository import insert_inference, get_inference_by_id
 
 router = APIRouter()
@@ -27,22 +28,17 @@ def predict(req: PredictRequest):
         # logging.error(f"[{request_id}] DB insert failed: {e}")
         # raise HTTPException(status_code=500, detail="Database error")
 
-    # python baseline
-    import time
-    start = time.time()
-    python_result = float((features * features).sum())
-    python_time = time.time() - start
+    size = 10_000_000
+    mode = req.mode;
 
-    # C++ version
-    from app.cpp import cpp_inference
-    start = time.time()
-    cpp_result = float(cpp_inference.heavy_compute(features))
-    cpp_time = time.time() - start
+    if mode == "python":
+        result = python_compute(size)
+    elif mode == "cpp":
+        result = cpp_compute(size)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid mode")
 
-    logging.info(f"[{request_id}] Python time: {python_time:.6f}s")
-    logging.info(f"[{request_id}] C++ time: {cpp_time:.6f}s")
-
-    return PredictResponse(id=1, x=req.x, y=req.y, result=cpp_result)
+    return PredictResponse(id=1, x=req.x, y=req.y, result=result)
 
 
 @router.get("/predict/{inference_id}")
