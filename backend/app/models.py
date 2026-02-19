@@ -1,11 +1,12 @@
 from pydantic import BaseModel
+from typing import Optional
 
-class PredictRequest(BaseModel):
+class InferenceCreateRequest(BaseModel):
     x: float
     y: float
     mode: str
 
-class PredictResponse(BaseModel):
+class InferenceResponse(BaseModel):
     id : int
     x : float
     y : float

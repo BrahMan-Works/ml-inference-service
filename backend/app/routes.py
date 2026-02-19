@@ -3,16 +3,17 @@ import logging
 import numpy as np
 import app.model_loader as model_loader
 
-from fastapi import APIRouter, HTTPException
-from app.models import PredictRequest, PredictResponse
+from typing import List
+from fastapi import APIRouter, HTTPException, status
+from app.models import InferenceCreateRequest, InferenceResponse
 from app.compute import python_compute, cpp_compute
-from app.repository import insert_inference, get_inference_by_id
+from app.repository import insert_inference, get_inference_by_id, delete_inference_by_id, list_inferences_from_db
 from app.onnx_loader import onnx_predict
 
 router = APIRouter()
 
-@router.post("/predict", response_model=PredictResponse)
-def predict(req: PredictRequest):
+@router.post("/inferences", status_code=201, response_model=InferenceResponse)
+def create_inference(req: InferenceCreateRequest):
     request_id = str(uuid.uuid4())
     logging.info(f"[{request_id}] Incoming /predict request")
 
@@ -36,15 +37,21 @@ def predict(req: PredictRequest):
         logging.error(f"[{request_id}] DB insert failed: {e}")
         raise HTTPException(status_code=500, detail="Database error")
 
-    return PredictResponse(id=1, x=req.x, y=req.y, result=result)
+    return InferenceResponse(id=inference_id, x=req.x, y=req.y, result=result)
 
 
-@router.get("/predict/{inference_id}")
-def get_prediction(inference_id: int):
+@router.get("/inferences", response_model=List[InferenceResponse])
+def list_inferences():
+    records = list_inferences_from_db()
+    return records
+
+
+@router.get("/inferences/{inference_id}", response_model=InferenceResponse)
+def get_inference(inference_id: int):
     request_id = str(uuid.uuid4())
     logging.info(f"[{request_id}] Fetching inference id={inference_id}")
 
-    # row = get_inference_by_id(inference_id)
+    row = get_inference_by_id(inference_id)
 
     if row is None:
         logging.warning(f"[{request_id}] Inference id={inference_id} not found")
@@ -52,10 +59,19 @@ def get_prediction(inference_id: int):
 
     logging.info(f"[{request_id}] Inference id={inference_id} found")
 
-    return {
-        "id": 1,
-        "x": 0,
-        "y": 0,
-        "result": 0,
-    }
+    return InferenceResponse(
+        id = row[0],
+        x = row[1],
+        y = row[2],
+        result = row[3],
+    )
 
+
+@router.delete("/inferences/{inference_id}", status_code=204)
+def delete_inference(inference_id: int):
+    deleted = delete_inference_by_id(inference_id)
+
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inference not found")
+
+    return
