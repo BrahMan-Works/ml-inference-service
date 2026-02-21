@@ -1,6 +1,7 @@
 import os
 import onnxruntime as ort
 import numpy as np
+import logging
 
 session = None
 input_name = None
@@ -15,7 +16,7 @@ def load_onnx_model():
     session = ort.InferenceSession(model_path)
     input_name = session.get_inputs()[0].name
     
-    print("ONNX model loaded.")
+    logging.info("ONNX model loaded.")
 
 def onnx_predict(features: np.ndarray):
     outputs = session.run(None, {input_name: features.astype(np.float32)})
