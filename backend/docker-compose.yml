@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:15
+    container_name: inference_db
+    environment:
+      POSTGRES_DB: inference_db
+      POSTGRES_USER: inference_user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U inference_user -d inference_db"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+
+  api:
+    build: .
+    container_name: inference_api
+    depends_on:
+      - db
+    environment:
+      DB_NAME: inference_db
+      DB_USER: inference_user
+      DB_PASSWORD: password
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
