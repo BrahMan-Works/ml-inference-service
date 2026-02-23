@@ -1,35 +1,48 @@
-# High-Performance ML Inference Service
+# ML Inference Service
 
-## Problem Statement
-Python-based machine learning inference is easy to build and iterate on, but it often becomes a performance bottleneck in production systems. This project explores the performance tradeoffs between pure Python inference and optimized C++/CUDA-based inference, while retaining a Python backend for developer productivity.
+A containerized, production-oriented ML inference backend built with FastAPI, PostgreSQL, and ONNX Runtime.
 
-The goal is to design and build a production-style ML inference service that is measurable, reproducible, and deployable on Linux.
-
----
-
-## High-Level Architecture
-The system is structured as a backend service that exposes machine learning inference through REST APIs. A Python-based FastAPI server handles request routing, validation, and orchestration. The ML inference layer initially uses a Python/PyTorch implementation as a baseline. Performance-critical inference components are then offloaded to a C++ (and optionally CUDA) implementation to evaluate latency and throughput improvements.
-
-Metadata, request logs, and experiment results are stored in a PostgreSQL database. The entire system is designed to be containerized and reproducible using Docker.
+This project demonstrates clean RESTful API design, database integration, containerization, and inference acceleration using a C++-backed runtime engine.
 
 ---
 
-## Tech Stack
-- **Backend:** Python 3, FastAPI
-- **Machine Learning:** PyTorch
-- **Database:** PostgreSQL
-- **Systems / Performance:** C++17 (optional CUDA)
-- **Infrastructure:** Docker, Docker Compose
-- **Platform:** Linux
+## Features
+
+- RESTful CRUD API for inference records
+- PostgreSQL integration with connection pooling
+- Automated database schema initialization
+- Environment-based configuration (no hardcoded secrets)
+- Global exception handling
+- Dockerized deployment (API + DB)
+- ONNX Runtime inference acceleration
+- Load-tested and benchmarked
 
 ---
 
-## Planned Milestones
-- **Week 1:** Linux environment setup, Git workflow, project scaffolding
-- **Week 2:** REST API development with FastAPI and PostgreSQL integration
-- **Week 3:** Database optimization, caching, and concurrency considerations
-- **Week 4:** Dockerization, configuration management, and CI setup
-- **Week 5–6:** ML model training and Python-based inference baseline
-- **Week 7–8:** C++-based inference module and Python integration
-- **Week 9–10:** Performance benchmarking and profiling
-- **Week 11–12:** Documentation, cleanup and polish.
+## Architecture
+
+Client → FastAPI → Inference Engine (Sklearn / ONNX Runtime) → PostgreSQL
+
+The service supports multiple inference modes:
+- `python` (sklearn model)
+- `onnx` (C++-backed ONNX runtime)
+
+---
+
+## API Endpoints
+
+POST   /inferences  
+GET    /inferences  
+GET    /inferences/{id}  
+DELETE /inferences/{id}
+
+All responses use strict Pydantic validation.
+
+---
+
+## Running with Docker (Recommended)
+
+From project root:
+
+```bash
+docker compose up --build
