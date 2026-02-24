@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.routes import router
+from app.db import init_connection_pool
 from app.model_loader import load_model
 from app.onnx_loader import load_onnx_model
 
@@ -24,14 +25,20 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
 
-@app.on_event("startup")
-def startup():
-    load_onnx_model()
 
 @app.on_event("startup")
-def startup_event():
+def startup():
+    logging.info("Starting application...")
+
+    init_connection_pool()
+    logging.info("Database connection pool initialized.")
+
     load_model()
-    logging.info("Model loaded")
+    logging.info("Sklearn model loaded.")
+
+    load_onnx_model()
+    logging.info("ONNX model loaded.")
+
 
 @app.get("/health")
 def health():

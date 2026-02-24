@@ -6,7 +6,7 @@ import app.model_loader as model_loader
 from typing import List
 from fastapi import APIRouter, HTTPException, status
 from app.models import InferenceCreateRequest, InferenceResponse
-from app.compute import python_compute#, cpp_compute
+from app.compute import python_compute, cpp_compute
 from app.repository import insert_inference, get_inference_by_id, delete_inference_by_id, list_inferences_from_db
 from app.onnx_loader import onnx_predict
 
@@ -25,8 +25,8 @@ def create_inference(req: InferenceCreateRequest):
 
     if mode == "python":
         result = float(model_loader.model.predict(features)[0])
-    # elif mode == "onnx":
-        # result = float(onnx_predict(features)[0][0])
+    elif mode == "onnx":
+        result = float(onnx_predict(features)[0][0])
     else:
         raise HTTPException(status_code=400, detail="Invalid mode")
 
