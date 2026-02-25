@@ -23,7 +23,7 @@ def init_connection_pool():
         try:
             connection_pool = pool.SimpleConnectionPool(
                 minconn=1,
-                maxconn=10,
+                maxconn=50,
                 dbname=DB_NAME,
                 user=DB_USER,
                 password=DB_PASSWORD,
