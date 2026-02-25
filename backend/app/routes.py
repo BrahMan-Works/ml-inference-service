@@ -23,6 +23,12 @@ def create_inference(req: InferenceCreateRequest):
     features = np.random.rand(1, 50)
     mode = req.mode
 
+    use_db = True
+
+    if mode.endswith("_nodb"):
+        use_db = False
+        mode = mode.replace("_nodb", "")
+
     if mode == "python":
         result = float(model_loader.model.predict(features)[0])
     elif mode == "onnx":
@@ -31,8 +37,11 @@ def create_inference(req: InferenceCreateRequest):
         raise HTTPException(status_code=400, detail="Invalid mode")
 
     try:
-        inference_id = insert_inference(req.x, req.y, result)
-        logging.info(f"[{request_id}] DB insert successful, id={inference_id}")
+        if use_db:
+            inference_id = insert_inference(req.x, req.y, result)
+            logging.info(f"[{request_id}] DB insert successful, id={inference_id}")
+        else:
+            inference_id = -1
     except Exception as e:
         logging.error(f"[{request_id}] DB insert failed: {e}")
         raise HTTPException(status_code=500, detail="Database error")
