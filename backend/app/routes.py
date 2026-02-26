@@ -7,10 +7,47 @@ from typing import List
 from fastapi import APIRouter, HTTPException, status
 from app.models import InferenceCreateRequest, InferenceResponse
 from app.compute import python_compute, cpp_compute
+from app.db_async import insert_inference_async
 from app.repository import insert_inference, get_inference_by_id, delete_inference_by_id, list_inferences_from_db
 from app.onnx_loader import onnx_predict
 
 router = APIRouter()
+
+@router.post("/inferences_async", status_code=201, response_model=InferenceResponse)
+async def create_inference_async(req: InferenceCreateRequest):
+    request_id = str(uuid.uuid4())
+    logging.info(f"[{request_id}] Incoming async /predict request")
+
+    if model_loader.model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+
+    features = np.random.rand(1, 50)
+    mode = req.mode
+
+    use_db = True
+
+    if mode.endswith("_nodb"):
+        use_db = False
+        mode = mode.replace("_nodb", "")
+
+    if mode == "python":
+        result = float(model_loader.model.predict(features)[0])
+    elif mode == "onnx":
+        result = float(onnx_predict(features)[0][0])
+    else:
+        raise HTTPException(status_code=400, detail="Invalid mode")
+
+    try:
+        if use_db:
+            inference_id = await insert_inference_async(req.x, req.y, result)
+        else:
+            inference_id = -1
+    except Exception as e:
+        logging.error(f"[{request_id}] async DB insert failed: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
+
+    return InferenceResponse(id=inference_id, x=req.x, y=req.y, result=result)
+
 
 @router.post("/inferences", status_code=201, response_model=InferenceResponse)
 def create_inference(req: InferenceCreateRequest):
