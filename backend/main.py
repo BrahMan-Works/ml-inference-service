@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.routes import router
 from app.db import init_connection_pool
+from app.db_async import init_async_pool
 from app.model_loader import load_model
 from app.onnx_loader import load_onnx_model
 
@@ -27,11 +28,11 @@ logging.basicConfig(
 
 
 @app.on_event("startup")
-def startup():
+async def startup():
     logging.info("Starting application...")
 
+    await init_async_pool()
     init_connection_pool()
-    logging.info("Database connection pool initialized.")
 
     load_model()
     logging.info("Sklearn model loaded.")

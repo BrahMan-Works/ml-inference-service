@@ -19,15 +19,16 @@ services:
     build: .
     container_name: inference_api
     depends_on:
-      - db
-    environment:
-      DB_NAME: inference_db
-      DB_USER: inference_user
-      DB_PASSWORD: password
-      DB_HOST: db
-      DB_PORT: 5432
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
+    environment:
+        DB_HOST: db
+        DB_PORT: 5432
+        DB_NAME: inference_db
+        DB_USER: inference_user
+        DB_PASSWORD: password
 
 volumes:
   postgres_data:
