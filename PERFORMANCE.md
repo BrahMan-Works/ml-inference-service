@@ -96,3 +96,60 @@ Additionally, PostgreSQL was tested with:
 This experiment demonstrates that in a containerized ML inference backend, database durability costs can outweigh inference computation costs under concurrent traffic.
 
 Optimizing system performance requires identifying the true bottleneck — in this case, synchronous disk commits — rather than prematurely optimizing compute layers.
+
+---
+
+## Sync vs Async Database Benchmark
+
+### Objective
+
+Evaluate the impact of switching from a synchronous PostgreSQL driver (psycopg2) to an asynchronous driver (asyncpg) under concurrent load.
+
+---
+
+### Test Environment
+
+- Deployment: Docker (API + PostgreSQL)
+- Backend: FastAPI + Uvicorn (4 workers)
+- Database: PostgreSQL 15
+- Connection Pool Size: 50
+- Load Tool: ApacheBench
+- Total Requests: 1000
+- Concurrency Level: 50
+- Endpoint Tested:
+  - `/inferences` (sync - psycopg2)
+  - `/inferences_async` (async - asyncpg)
+
+---
+
+### Results
+
+| Mode                  | Requests/sec | Mean Latency |
+|------------------------|--------------|--------------|
+| Sync (psycopg2)       | ~483        | ~103 ms      |
+| Async (asyncpg)       | ~730        | ~68 ms       |
+
+---
+
+### Observed Improvement
+
+- ~51% increase in throughput
+- ~34% reduction in mean latency
+
+---
+
+### Analysis
+
+The synchronous implementation blocks worker threads while waiting for database I/O. Under concurrent load, this reduces effective worker utilization.
+
+The asynchronous implementation (asyncpg) allows the event loop to schedule other tasks while awaiting database responses, improving concurrency efficiency without changing the database itself.
+
+The performance gain was achieved without modifying inference logic, confirming that the bottleneck was I/O wait rather than compute cost.
+
+---
+
+### Conclusion
+
+Switching to an asynchronous database driver significantly improves throughput in write-heavy workloads under concurrency. 
+
+This demonstrates that architectural decisions (blocking vs non-blocking I/O) can have greater impact on system performance than micro-optimizations in compute layers.
