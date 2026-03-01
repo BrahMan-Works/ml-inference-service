@@ -5,6 +5,16 @@ import asyncpg
 
 pool = None
 
+async def bulk_insert(batch):
+    query = """
+            INSERT INTO inference_requests (x, y, result)
+            VALUES ($1, $2, $3)
+            """
+
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.executemany(query, batch)
+
 async def init_async_pool():
     global pool
     try:
