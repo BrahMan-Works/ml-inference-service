@@ -7,7 +7,4 @@ class InferenceCreateRequest(BaseModel):
     mode: str
 
 class InferenceResponse(BaseModel):
-    id : int
-    x : float
-    y : float
     result: float

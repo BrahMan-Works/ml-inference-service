@@ -54,9 +54,6 @@ def list_inferences_from_db() -> list:
 
         return [
             {
-                "id": row[0],
-                "x": row[1],
-                "y": row[2],
                 "result": row[3]
             }
             for row in rows

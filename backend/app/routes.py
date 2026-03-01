@@ -7,6 +7,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, status
 from app.models import InferenceCreateRequest, InferenceResponse
 from app.compute import python_compute, cpp_compute
+from app.write_buffer import write_queue
 from app.db_async import insert_inference_async
 from app.repository import insert_inference, get_inference_by_id, delete_inference_by_id, list_inferences_from_db
 from app.onnx_loader import onnx_predict
@@ -39,14 +40,14 @@ async def create_inference_async(req: InferenceCreateRequest):
 
     try:
         if use_db:
-            inference_id = await insert_inference_async(req.x, req.y, result)
+            inference_id = await write_queue.put((req.x, req.y, result))
         else:
             inference_id = -1
     except Exception as e:
         logging.error(f"[{request_id}] async DB insert failed: {e}")
         raise HTTPException(status_code=500, detail="Database error")
 
-    return InferenceResponse(id=inference_id, x=req.x, y=req.y, result=result)
+    return InferenceResponse(result=result)
 
 
 @router.post("/inferences", status_code=201, response_model=InferenceResponse)
@@ -83,7 +84,7 @@ def create_inference(req: InferenceCreateRequest):
         logging.error(f"[{request_id}] DB insert failed: {e}")
         raise HTTPException(status_code=500, detail="Database error")
 
-    return InferenceResponse(id=inference_id, x=req.x, y=req.y, result=result)
+    return InferenceResponse(result=result)
 
 
 @router.get("/inferences", response_model=List[InferenceResponse])
@@ -106,9 +107,6 @@ def get_inference(inference_id: int):
     logging.info(f"[{request_id}] Inference id={inference_id} found")
 
     return InferenceResponse(
-        id = row[0],
-        x = row[1],
-        y = row[2],
         result = row[3],
     )
 
