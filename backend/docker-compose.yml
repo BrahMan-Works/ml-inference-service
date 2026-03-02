@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15
@@ -10,10 +12,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U inference_user -d inference_db"]
-        interval: 5s
-        timeout: 5s
-        retries: 5
+      test: ["CMD-SHELL", "pg_isready -U inference_user -d inference_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build: .
@@ -23,12 +25,23 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
-    environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_NAME: inference_db
-        DB_USER: inference_user
-        DB_PASSWORD: password
 
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: inference_db
+      DB_USER: inference_user
+      DB_PASSWORD: password
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+
+    volumes:
+      - .:/app   
 volumes:
   postgres_data:
