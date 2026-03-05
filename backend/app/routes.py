@@ -6,7 +6,7 @@ import app.model_loader as model_loader
 from typing import List
 from fastapi import APIRouter, HTTPException, status
 from app.models import InferenceCreateRequest, InferenceResponse
-from app.compute import python_compute, cpp_compute
+from app.compute import python_compute, cpp_compute, torch_compute
 from app.write_buffer import write_queue
 from app.db_async import insert_inference_async
 from app.repository import insert_inference, get_inference_by_id, delete_inference_by_id, list_inferences_from_db
@@ -32,9 +32,17 @@ async def create_inference_async(req: InferenceCreateRequest):
         mode = mode.replace("_nodb", "")
 
     if mode == "python":
-        result = float(model_loader.model.predict(features)[0])
+        result = python_compute(features)
+    
+    elif mode == "torch":
+        result = torch_compute(features)
+        
     elif mode == "onnx":
         result = float(onnx_predict(features)[0][0])
+    
+    elif mode == "cpp":
+        result = cpp_compute(features)
+    
     else:
         raise HTTPException(status_code=400, detail="Invalid mode")
 
