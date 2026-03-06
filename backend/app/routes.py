@@ -9,6 +9,7 @@ from app.models import InferenceCreateRequest, InferenceResponse
 from app.compute import python_compute, cpp_compute, torch_compute
 from app.write_buffer import write_queue
 from app.db_async import insert_inference_async
+from app.gpu_batcher import submit_inference
 from app.repository import insert_inference, get_inference_by_id, delete_inference_by_id, list_inferences_from_db
 from app.onnx_loader import onnx_predict
 
@@ -35,7 +36,7 @@ async def create_inference_async(req: InferenceCreateRequest):
         result = python_compute(features)
     
     elif mode == "torch":
-        result = torch_compute(features)
+        result = await submit_inference(features)
         
     elif mode == "onnx":
         result = float(onnx_predict(features)[0][0])

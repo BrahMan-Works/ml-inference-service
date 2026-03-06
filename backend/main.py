@@ -7,6 +7,7 @@ from app.routes import router
 from app.write_buffer import db_writer
 from app.db import init_connection_pool
 from app.db_async import init_async_pool
+from app.gpu_batcher import gpu_batch_worker
 from app.model_loader import load_model
 from app.onnx_loader import load_onnx_model
 
@@ -43,6 +44,7 @@ async def startup():
     logging.info("ONNX model loaded.")
 
     asyncio.create_task(db_writer())
+    asyncio.create_task(gpu_batch_worker())
 
 
 @app.on_event("shutdown")
