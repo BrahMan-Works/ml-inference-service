@@ -1,6 +1,7 @@
 import logging
 import asyncio
 
+from prometheus_client import make_asgi_app
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.routes import router
@@ -11,7 +12,9 @@ from app.gpu_batcher import gpu_batch_worker
 from app.model_loader import load_model
 from app.onnx_loader import load_onnx_model
 
+metrics_app = make_asgi_app()
 app = FastAPI()
+app.mount("/metrics", metrics_app)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -54,5 +57,6 @@ async def shutdown():
 
 
 @app.get("/health")
-def health():
+async def health():
     return {"status": "ok"}
+

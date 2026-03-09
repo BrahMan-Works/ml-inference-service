@@ -1,3 +1,4 @@
+import logging
 import asyncio
 import numpy as np
 import torch
@@ -32,6 +33,8 @@ async def gpu_batch_worker():
                 await asyncio.sleep(0.001)
 
         features = np.vstack(batch)
+
+        logging.info(f"GPU batch size: {len(batch)}")
 
         with torch.no_grad():
             tensor = torch.tensor(features, dtype=torch.float32).to(device)

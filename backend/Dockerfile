@@ -13,7 +13,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 RUN pip install --no-cache-dir \
     torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu121
+    --extra-index-url https://download.pytorch.org/whl/cu121
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -24,4 +24,4 @@ RUN cd app/cpp && python setup.py build_ext --inplace || true
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

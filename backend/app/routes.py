@@ -1,5 +1,6 @@
 import uuid
 import logging
+import time
 import numpy as np
 import app.model_loader as model_loader
 
@@ -12,18 +13,21 @@ from app.db_async import insert_inference_async
 from app.gpu_batcher import submit_inference
 from app.repository import insert_inference, get_inference_by_id, delete_inference_by_id, list_inferences_from_db
 from app.onnx_loader import onnx_predict
+from app.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
 router = APIRouter()
 
 @router.post("/inferences_async", status_code=201, response_model=InferenceResponse)
 async def create_inference_async(req: InferenceCreateRequest):
+    start = time.time()
+
     request_id = str(uuid.uuid4())
     logging.info(f"[{request_id}] Incoming async /predict request")
 
     if model_loader.model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
-    features = np.random.rand(1, 50)
+    features = np.random.rand(1, 3, 224, 224).astype("float32")
     mode = req.mode
 
     use_db = True
@@ -55,6 +59,9 @@ async def create_inference_async(req: InferenceCreateRequest):
     except Exception as e:
         logging.error(f"[{request_id}] async DB insert failed: {e}")
         raise HTTPException(status_code=500, detail="Database error")
+
+    REQUEST_COUNT.labels(mode).inc()
+    REQUEST_LATENCY.labels(mode).observe(time.time() - start)
 
     return InferenceResponse(result=result)
 

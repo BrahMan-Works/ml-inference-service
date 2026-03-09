@@ -17,6 +17,7 @@ numpy==2.2.6
 onnx==1.20.1
 onnxruntime==1.23.2
 packaging==26.0
+prometheus-client
 protobuf==6.33.5
 psycopg2-binary==2.9.11
 pybind11==3.0.1
