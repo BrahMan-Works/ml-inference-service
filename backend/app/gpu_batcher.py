@@ -38,7 +38,8 @@ async def gpu_batch_worker():
 
         with torch.no_grad():
             tensor = torch.tensor(features, dtype=torch.float32).to(device)
-            outputs = model(tensor).cpu().numpy()
+            with torch.autocast("cuda"):
+                outputs = model(tensor)
 
         for i, future in enumerate(futures):
             future.set_result(outputs[i][0])

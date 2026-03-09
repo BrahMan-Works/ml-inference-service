@@ -1,6 +1,10 @@
 import torch
 import torchvision.models as models
 
+BATCH_SIZE = 32
+
+torch.backends.cudnn.benchmark = True
+
 # this is a simple feed forward model
 #class SimpleModel(nn.Module):
 #    def __init__(self):
@@ -24,13 +28,21 @@ model.eval()
 model.to(device)
 
 with torch.no_grad():
-    dummy = torch.randn(1, 3, 224, 224).to(device)
-    model(dummy)
+    with torch.autocast("cuda"):
+        dummy = torch.randn(BATCH_SIZE, 3, 224, 224).to(device)
+        model(dummy)
 
 def predict(features):
+    tensor = torch.tensor(features, dtype=torch.float32)
+
+    if torch.dim() == 3:
+        tensor = tensor.unsqueeze(0)
+
+    tensor = tensor.to(device)
+
     with torch.no_grad():
-        tensor = torch.tensor(features, dtype=torch.float32).to(device)
-        output = model(tensor)
+        with torch.autocast("cuda"):
+            output = model(tensor)
         
     return output.cpu().numpy()
 
