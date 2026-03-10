@@ -1,7 +1,14 @@
+import time
+from prometheus_client import Histogram
 import torch
 import torchvision.models as models
 
 BATCH_SIZE = 32
+
+GPU_INFERENCE_TIME = Histogram(
+    "gpu_inference_seconds",
+    "Time spent running the model on GPU"
+)
 
 torch.backends.cudnn.benchmark = True
 
@@ -40,9 +47,10 @@ def predict(features):
 
     tensor = tensor.to(device)
 
-    with torch.no_grad():
-        with torch.autocast("cuda"):
-            output = model(tensor)
+    with GPU_INFERENCE_TIME.time():
+        with torch.no_grad():
+            with torch.autocast("cuda"):
+                output = model(tensor)
         
     return output.cpu().numpy()
 

@@ -4,6 +4,7 @@ import time
 import numpy as np
 import app.model_loader as model_loader
 
+from prometheus_client import Counter, Histogram
 from typing import List
 from fastapi import APIRouter, HTTPException, status
 from app.models import InferenceCreateRequest, InferenceResponse
@@ -19,8 +20,6 @@ router = APIRouter()
 
 @router.post("/inferences_async", status_code=201, response_model=InferenceResponse)
 async def create_inference_async(req: InferenceCreateRequest):
-    start = time.time()
-
     request_id = str(uuid.uuid4())
     logging.info(f"[{request_id}] Incoming async /predict request")
 
@@ -36,32 +35,33 @@ async def create_inference_async(req: InferenceCreateRequest):
         use_db = False
         mode = mode.replace("_nodb", "")
 
-    if mode == "python":
-        result = python_compute(features)
-    
-    elif mode == "torch":
-        result = await submit_inference(features)
-        
-    elif mode == "onnx":
-        result = float(onnx_predict(features)[0][0])
-    
-    elif mode == "cpp":
-        result = cpp_compute(features)
-    
-    else:
-        raise HTTPException(status_code=400, detail="Invalid mode")
-
-    try:
-        if use_db:
-            inference_id = await write_queue.put((req.x, req.y, result))
-        else:
-            inference_id = -1
-    except Exception as e:
-        logging.error(f"[{request_id}] async DB insert failed: {e}")
-        raise HTTPException(status_code=500, detail="Database error")
-
     REQUEST_COUNT.labels(mode).inc()
-    REQUEST_LATENCY.labels(mode).observe(time.time() - start)
+
+    with REQUEST_LATENCY.labels(mode).time():
+
+        if mode == "python":
+            result = python_compute(features)
+    
+        elif mode == "torch":
+            result = await submit_inference(features)
+        
+        elif mode == "onnx":
+            result = float(onnx_predict(features)[0][0])
+    
+        elif mode == "cpp":
+            result = cpp_compute(features)
+    
+        else:
+            raise HTTPException(status_code=400, detail="Invalid mode")
+
+        try:
+            if use_db:
+                inference_id = await write_queue.put((req.x, req.y, result))
+            else:
+                inference_id = -1
+        except Exception as e:
+            logging.error(f"[{request_id}] async DB insert failed: {e}")
+            raise HTTPException(status_code=500, detail="Database error")
 
     return InferenceResponse(result=result)
 
