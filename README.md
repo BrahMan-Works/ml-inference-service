@@ -1,48 +1,146 @@
-# ML Inference Service
+# GPU-Accelerated ML Inference Service
 
-A containerized, production-oriented ML inference backend built with FastAPI, PostgreSQL, and ONNX Runtime.
+A high-performance machine learning inference API built with **FastAPI**, **CUDA**, and **PyTorch**, designed to simulate a production-style ML inference system with **GPU acceleration, async request handling, benchmarking, and observability**.
 
-This project demonstrates clean RESTful API design, database integration, containerization, and inference acceleration using a C++-backed runtime engine.
-
----
-
-## Features
-
-- RESTful CRUD API for inference records
-- PostgreSQL integration with connection pooling
-- Automated database schema initialization
-- Environment-based configuration (no hardcoded secrets)
-- Global exception handling
-- Dockerized deployment (API + DB)
-- ONNX Runtime inference acceleration
-- Load-tested and benchmarked
+The project explores how different inference backends perform under load while running inside a fully containerized environment.
 
 ---
 
-## Architecture
+## 🚀 Key Features
 
-Client → FastAPI → Inference Engine (Sklearn / ONNX Runtime) → PostgreSQL
-
-The service supports multiple inference modes:
-- `python` (sklearn model)
-- `onnx` (C++-backed ONNX runtime)
-
----
-
-## API Endpoints
-
-POST   /inferences  
-GET    /inferences  
-GET    /inferences/{id}  
-DELETE /inferences/{id}
-
-All responses use strict Pydantic validation.
+* GPU-accelerated inference using **PyTorch + CUDA**
+* **ONNX Runtime** inference for performance comparison
+* **FastAPI async API** for high concurrency
+* **Dynamic batching experiments** for GPU throughput
+* **PostgreSQL logging** with async writes
+* **Dockerized CUDA environment**
+* **Prometheus metrics instrumentation**
+* **ApacheBench load testing**
+* Throughput benchmarking across concurrency levels
 
 ---
 
-## Running with Docker (Recommended)
+## 🧠 System Architecture
 
-From project root:
+```
+Client
+   │
+   ▼
+FastAPI Inference API
+   │
+   ├── GPU Inference
+   │     ├── PyTorch (CUDA)
+   │     ├── ONNX Runtime
+   │     └── Python baseline
+   │
+   ├── Async Write Queue
+   │
+   ▼
+PostgreSQL Database
 
-```bash
+Metrics → Prometheus
+```
+
+---
+
+## 📊 Observability
+
+The service exposes Prometheus metrics:
+
+```
+/metrics
+```
+
+Key metrics include:
+
+* `inference_requests_total`
+* `inference_latency_seconds`
+* `gpu_inference_seconds`
+
+This allows monitoring of:
+
+* request throughput
+* latency distribution
+* GPU compute time
+
+---
+
+## 🧪 Benchmarking
+
+Load testing performed using **ApacheBench**.
+
+Example benchmark:
+
+```
+ab -l -n 5000 -c 100 \
+-T application/json \
+-p payload.json \
+http://localhost:8000/inferences_async
+```
+
+---
+
+## 🖥 GPU Acceleration
+
+Inference runs on GPU using:
+
+* **PyTorch CUDA**
+* **mixed precision (Tensor Cores)**
+* **batched inference**
+
+Example model:
+
+```
+ResNet18
+```
+
+The system uses batching to better utilize GPU compute resources.
+
+---
+
+## 🐳 Running the Project
+
+### Start services
+
+```
 docker compose up --build
+```
+
+Services started:
+
+* API server
+* PostgreSQL database
+
+---
+
+### Access API
+
+```
+http://localhost:8000/docs
+```
+
+Metrics endpoint:
+
+```
+http://localhost:8000/metrics/
+```
+
+---
+
+## 🧰 Tech Stack
+
+* Python
+* FastAPI
+* PyTorch
+* ONNX Runtime
+* CUDA
+* PostgreSQL
+* Docker
+* Prometheus
+* ApacheBench
+
+---
+
+## 📄 License
+
+MIT License
