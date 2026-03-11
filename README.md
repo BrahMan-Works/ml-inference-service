@@ -78,6 +78,20 @@ ab -l -n 5000 -c 100 \
 http://localhost:8000/inferences_async
 ```
 
+## ⚡ Performance Benchmark
+
+Throughput measured using **ApacheBench** across increasing concurrency levels.
+
+| Concurrency | Requests/sec |
+| ----------- | ------------ |
+| 25          | ~854         |
+| 50          | ~919         |
+| 100         | ~924         |
+| 200         | ~926         |
+
+The system saturates around **~920 requests/sec**, demonstrating the concurrency ceiling of the current architecture.
+
+
 ---
 
 ## 🖥 GPU Acceleration
